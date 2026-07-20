@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recruit Ready — Find a College Basketball Fit You Can Afford</title>
+  <meta name="description" content="A free tool that helps families of any income find realistic, affordable college basketball programs to target for recruitment and scholarships — D1 through D3, NAIA, and JUCO." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🏀</span>
+        <div>
+          <h1>Recruit Ready</h1>
+          <p class="tagline">Find a college basketball fit your family can actually afford.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- INTRO -->
+    <section id="intro" class="card active-view">
+      <h2>Get your athlete recruited — without guessing.</h2>
+      <p class="lead">
+        Answer a few honest questions about your player's game, grades, and your family's budget.
+        We'll estimate a realistic level (D1, D2, D3, NAIA, or JUCO), rank the pathways that give
+        you the best shot at a scholarship or affordable aid, and hand you a targeted school list
+        plus a step-by-step action plan.
+      </p>
+      <div class="fact-grid">
+        <div class="fact"><strong>D1 &amp; D2</strong> offer athletic scholarships (D1 = full, D2 = usually partial).</div>
+        <div class="fact"><strong>D3</strong> offers <em>no</em> athletic money — but elite D3s can be nearly free for low-income families through need-based aid.</div>
+        <div class="fact"><strong>NAIA &amp; JUCO</strong> are under-used, affordable pathways that also give athletic aid.</div>
+      </div>
+      <button class="btn primary" id="startBtn">Start — it's free &amp; private</button>
+      <p class="fineprint">Your answers stay in your browser. Nothing is uploaded or saved to a server.</p>
+    </section>
+
+    <!-- WIZARD -->
+    <section id="wizard" class="card">
+      <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-count"><span id="stepNum">1</span> of <span id="stepTotal">5</span></p>
+      <form id="quizForm" novalidate>
+        <!-- Steps are injected by app.js -->
+        <div id="stepContainer"></div>
+        <div class="nav-row">
+          <button type="button" class="btn ghost" id="backBtn">Back</button>
+          <button type="button" class="btn primary" id="nextBtn">Next</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results" class="card">
+      <div id="resultsContent"></div>
+      <div class="nav-row">
+        <button type="button" class="btn ghost" id="restartBtn">Start over</button>
+        <button type="button" class="btn primary" id="printBtn">Print / Save as PDF</button>
+      </div>
+      <p class="disclaimer">
+        <strong>A note on honesty:</strong> This tool gives realistic guidance, not guarantees or official
+        eligibility rulings. School costs and aid change yearly — always confirm your real price on each
+        school's official <em>Net Price Calculator</em> and verify eligibility at the NCAA/NAIA Eligibility Centers.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Recruit Ready · Built to help families of every income find a path to college basketball.</p>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
