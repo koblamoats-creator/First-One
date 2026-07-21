@@ -30,7 +30,7 @@ const STEPS = [
         ],
       },
       {
-        id: "region", label: "Your home region", type: "select",
+        id: "region", label: "Which region do you most want to attend college in?", type: "select",
         options: [
           ["", "Select…"], ["NE", "Northeast"], ["SE", "Southeast"],
           ["MW", "Midwest"], ["SW", "Southwest"], ["W", "West"],

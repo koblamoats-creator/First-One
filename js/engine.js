@@ -115,7 +115,16 @@ function assessAcademics(a) {
 function assessFinances(a) {
   const notes = [];
   const lowIncome =
-    a.income === "under30" || a.income === "30to60" || a.pellEligible === "yes";
+    a.income === "under30" ||
+    a.income === "30to60" ||
+    a.pellEligible === "yes" ||
+    a.reducedLunch === "yes";
+
+  // Three-way income tier drives WHICH kinds of schools we surface.
+  let incomeTier;
+  if (lowIncome) incomeTier = "low";
+  else if (a.income === "over100") incomeTier = "high";
+  else incomeTier = "middle"; // 60-100 or 'prefer not to say' with no low-income signal
 
   if (a.pellEligible === "yes" || a.income === "under30") {
     notes.push(
@@ -134,11 +143,24 @@ function assessFinances(a) {
 
   notes.push(AID_FACTS.fafsa);
 
+  if (incomeTier === "middle") {
+    notes.push(
+      "Middle-income tip: you may get less need-based aid, so MERIT (academic) scholarships and affordable in-state publics are your biggest levers. Strong grades and test scores are worth real money here."
+    );
+  }
+  if (incomeTier === "high") {
+    notes.push(
+      "Higher-income tip: expect little need-based aid, so target schools with strong MERIT scholarships, good in-state public value, or an athletic scholarship (D1/D2/NAIA). Run each Net Price Calculator — sticker price is rarely what you pay."
+    );
+  }
+
   return {
     lowIncome,
+    incomeTier, // 'low' | 'middle' | 'high'
     maxOutOfPocket: a.maxOutOfPocket, // 'under5','5to15','15to30','flexible'
     inStatePreference: a.inState === "yes",
     willingToRelocate: a.relocate === "yes",
+    preferredRegion: a.region || "", // region they want to attend college in
     notes,
   };
 }
@@ -238,56 +260,81 @@ function rankDivisions(tier, academics, finances, a) {
     .sort((x, y) => y.score - x.score);
 }
 
-/* Pick schools for the shortlist, bucketed Reach/Target/Safety by affordability + fit. */
+/*
+ * Pick schools for the shortlist, bucketed Reach/Target/Safety.
+ * The KEY idea: the family's income tier changes WHICH schools score well, not
+ * just how the list is filtered — so changing income/grades visibly reshuffles
+ * the results.
+ */
 function buildShortlist(rankedDivisions, tier, academics, finances, a) {
   const topDivisions = rankedDivisions.slice(0, 3).map((d) => d.key);
+  const preferred = finances.preferredRegion;
 
   // Candidate pool: schools in the recommended divisions.
   let pool = SCHOOLS.filter((s) => topDivisions.includes(s.division));
 
-  // Region filter if they won't relocate: keep home region + adjacent-ish.
-  if (!finances.willingToRelocate && a.region) {
-    pool = pool.filter((s) => s.region === a.region);
-    // If that emptied the pool, fall back to all (better to show something).
-    if (pool.length < 4) pool = SCHOOLS.filter((s) => topDivisions.includes(s.division));
+  // If they won't relocate, keep the region they want to attend in.
+  // Fall back gracefully if that leaves too few to fill a useful list.
+  if (!finances.willingToRelocate && preferred) {
+    const regional = pool.filter((s) => s.region === preferred);
+    if (regional.length >= 6) pool = regional;
   }
 
-  // Affordability filter for low income: drop 'low' affordability unless it meets full need.
-  if (finances.lowIncome) {
-    pool = pool.filter((s) => s.lowIncomeAffordability !== "low" || s.meetsFullNeed);
-  }
+  const strong = academics.academicStrength === "strong";
+  const good = academics.academicStrength === "good";
 
-  // Score each school for fit and bucket it.
+  // Score each school for fit — income tier drives the affordability weighting.
   const scored = pool.map((s) => {
+    const facts = DIVISION_FACTS[s.division];
     let fit = 0;
-    if (s.lowIncomeAffordability === "high") fit += 3;
-    if (s.meetsFullNeed) fit += 2;
-    if (finances.inStatePreference && s.type === "public" && s.state === a.homeState) fit += 3;
-    if (s.region === a.region) fit += 1;
+    const reasons = [];
+
+    if (finances.incomeTier === "low") {
+      if (s.lowIncomeAffordability === "high") { fit += 3; }
+      else if (s.lowIncomeAffordability === "medium") { fit += 1; }
+      if (s.meetsFullNeed) { fit += 3; reasons.push("meets 100% of need"); }
+      if (facts.athleticScholarships) { fit += 1; reasons.push("athletic aid can stack with your need aid"); }
+    } else if (finances.incomeTier === "middle") {
+      if (s.lowIncomeAffordability === "high") { fit += 2; }
+      if (s.meritAid) { fit += 3; reasons.push("strong merit scholarships"); }
+      if (s.meetsFullNeed) { fit += 1; }
+      if (facts.athleticScholarships) { fit += 1; }
+      if (s.type === "public" && s.region === preferred) { fit += 1; reasons.push("affordable public option"); }
+    } else {
+      // high income: need aid won't help much; reward merit + athletic value.
+      if (s.meritAid) { fit += 3; reasons.push("merit/academic scholarships"); }
+      if (facts.athleticScholarships) { fit += 2; reasons.push("athletic scholarship potential"); }
+      if (s.type === "public") { fit += 1; reasons.push("public-school value"); }
+      // full-need schools give a high earner little, so no bonus here.
+    }
+
+    // Region + in-state preferences (apply for everyone).
+    if (preferred && s.region === preferred) fit += 2;
+    if (finances.inStatePreference && s.type === "public" && s.state === (a.homeState || "").toUpperCase()) {
+      fit += 3; reasons.push("in-state public tuition");
+    }
 
     // Selectivity vs academic strength decides reach/target/safety.
     const sel = s.selectivity;
     let bucket;
-    const strong = academics.academicStrength === "strong";
-    const good = academics.academicStrength === "good";
     if (sel === "highly-selective") bucket = strong ? "target" : "reach";
     else if (sel === "selective") bucket = strong ? "safety" : good ? "target" : "reach";
     else if (sel === "moderate") bucket = good || strong ? "safety" : "target";
     else bucket = "safety"; // open admission
 
-    return { ...s, fit, bucket };
+    return { ...s, fit, fitReasons: reasons, bucket };
   });
 
-  // Sort each bucket by fit and cap counts.
+  // Sort each bucket by fit (tie-break by name for stable, varied output).
   const byBucket = { reach: [], target: [], safety: [] };
   scored
-    .sort((x, y) => y.fit - x.fit)
+    .sort((x, y) => y.fit - x.fit || x.name.localeCompare(y.name))
     .forEach((s) => byBucket[s.bucket].push(s));
 
   return {
-    reach: byBucket.reach.slice(0, 4),
-    target: byBucket.target.slice(0, 5),
-    safety: byBucket.safety.slice(0, 5),
+    reach: byBucket.reach.slice(0, 5),
+    target: byBucket.target.slice(0, 6),
+    safety: byBucket.safety.slice(0, 6),
   };
 }
 
