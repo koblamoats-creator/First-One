@@ -282,19 +282,19 @@ function divisionCard(rank, d, index) {
 function schoolItem(s) {
   const facts = DIVISION_FACTS[s.division];
   const need = s.meetsFullNeed ? `<span class="tag full-need">Meets full need</span>` : "";
-  const afford =
-    s.lowIncomeAffordability === "high"
-      ? `<span class="tag afford-high">High affordability</span>`
-      : s.lowIncomeAffordability === "medium"
-      ? `<span class="tag afford-med">Medium affordability</span>`
-      : "";
+  const merit = s.meritAid ? `<span class="tag merit">Merit $</span>` : "";
+  // Income-aware verdict — the line that changes with the family's income.
+  const v = s.verdict
+    ? `<div class="school-verdict ${s.verdict.tone}">💵 ${s.verdict.text}</div>`
+    : "";
   return `
     <li class="school">
       <div class="school-top">
         <span class="school-name">${s.name}</span>
         <span class="school-div">${facts.name.replace("NCAA ", "")}</span>
       </div>
-      <div class="school-meta">${s.state} · ${s.type} ${afford} ${need}</div>
+      <div class="school-meta">${s.state} · ${s.type} ${need} ${merit}</div>
+      ${v}
       <div class="school-note">${s.note}</div>
     </li>`;
 }
@@ -355,7 +355,9 @@ function renderResults() {
     </div>
 
     <h3>Target school shortlist</h3>
-    <p class="section-sub">A starter list from our sample database, sorted into Reach / Target / Safety for your athlete. Use this as a <em>model</em> for the kind of schools to research — then build your own list of 15–30.</p>
+    <p class="section-sub">Sorted into Reach / Target / Safety for your athlete, and filtered for your <strong>${
+      { low: "lower-income", middle: "middle-income", high: "higher-income" }[rec.finances.incomeTier]
+    }</strong> situation. The 💵 line on each card is our cost read <em>for your income</em> — it changes if your income changes. Build your own list of 15–30 from this model.</p>
     <div class="buckets">
       ${bucketColumn("🎯 Reach", "Ambitious — worth a shot", rec.shortlist.reach)}
       ${bucketColumn("✅ Target", "Realistic, strong-fit matches", rec.shortlist.target)}
@@ -413,3 +415,81 @@ el("restartBtn").addEventListener("click", () => {
 });
 
 el("printBtn").addEventListener("click", () => window.print());
+
+/* ------------------------------------------------------------------ *
+ * Browse All Schools
+ * ------------------------------------------------------------------ */
+const REGION_LABEL = { NE: "Northeast", SE: "Southeast", MW: "Midwest", SW: "Southwest", W: "West" };
+
+function renderBrowse() {
+  const region = el("fRegion").value;
+  const division = el("fDivision").value;
+  const type = el("fType").value;
+  const aid = el("fAid").value;
+  const q = el("fSearch").value.trim().toLowerCase();
+
+  let list = SCHOOLS.filter((s) => {
+    if (region && s.region !== region) return false;
+    if (division && s.division !== division) return false;
+    if (type && s.type !== type) return false;
+    if (aid === "fullneed" && !s.meetsFullNeed) return false;
+    if (aid === "merit" && !s.meritAid) return false;
+    if (aid === "athletic" && !DIVISION_FACTS[s.division].athleticScholarships) return false;
+    if (q && !(s.name.toLowerCase().includes(q) || s.state.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  // Sort by region then division then name for a tidy browse.
+  const divOrder = { D1: 0, D2: 1, D3: 2, NAIA: 3, JUCO: 4 };
+  list.sort(
+    (x, y) =>
+      x.region.localeCompare(y.region) ||
+      divOrder[x.division] - divOrder[y.division] ||
+      x.name.localeCompare(y.name)
+  );
+
+  el("browseCount").textContent =
+    `${list.length} college${list.length === 1 ? "" : "s"}` +
+    (region ? ` in the ${REGION_LABEL[region]}` : " nationwide");
+
+  el("browseList").innerHTML = list.length
+    ? list.map(browseItem).join("")
+    : `<li class="empty">No colleges match those filters. Try widening them.</li>`;
+}
+
+/* A browse card — no income verdict here (that's personalized in results). */
+function browseItem(s) {
+  const facts = DIVISION_FACTS[s.division];
+  const need = s.meetsFullNeed ? `<span class="tag full-need">Meets full need</span>` : "";
+  const merit = s.meritAid ? `<span class="tag merit">Merit $</span>` : "";
+  const athletic = facts.athleticScholarships ? `<span class="tag athletic">Athletic $</span>` : "";
+  const afford =
+    s.lowIncomeAffordability === "high"
+      ? `<span class="tag afford-high">Affordable</span>`
+      : "";
+  return `
+    <li class="school">
+      <div class="school-top">
+        <span class="school-name">${s.name}</span>
+        <span class="school-div">${facts.name.replace("NCAA ", "")}</span>
+      </div>
+      <div class="school-meta">${s.state} · ${REGION_LABEL[s.region]} · ${s.type} ${afford} ${need} ${merit} ${athletic}</div>
+      <div class="school-note">${s.note}</div>
+    </li>`;
+}
+
+["fRegion", "fDivision", "fType", "fAid"].forEach((id) =>
+  el(id).addEventListener("change", renderBrowse)
+);
+el("fSearch").addEventListener("input", renderBrowse);
+
+el("browseBtn").addEventListener("click", () => {
+  renderBrowse();
+  showView("browse");
+});
+el("browseBackBtn").addEventListener("click", () => showView("intro"));
+el("browseStartBtn").addEventListener("click", () => {
+  currentStep = 0;
+  renderStep();
+  showView("wizard");
+});

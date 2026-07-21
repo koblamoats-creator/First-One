@@ -144,7 +144,27 @@ select:focus, input:focus { outline: none; border-color: var(--orange); }
 .tag.full-need { background: var(--green-bg); color: var(--green); }
 .tag.afford-high { background: var(--green-bg); color: var(--green); }
 .tag.afford-med { background: var(--amber-bg); color: var(--amber); }
+.tag.merit { background: var(--blue-bg); color: var(--navy-2); }
+.tag.athletic { background: #f3ecfb; color: #6b3fa0; }
 .empty { font-size: 13px; color: var(--muted); }
+
+/* Income-aware affordability verdict on each school card */
+.school-verdict { font-size: 12.5px; font-weight: 600; margin: 5px 0; padding: 6px 9px; border-radius: 8px; }
+.school-verdict.good { background: var(--green-bg); color: var(--green); }
+.school-verdict.ok { background: var(--blue-bg); color: var(--navy-2); }
+.school-verdict.warn { background: var(--amber-bg); color: var(--amber); }
+
+/* Intro actions */
+.intro-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* Browse filters */
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 18px 0; }
+.filters label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.filters select, .filters input { max-width: none; width: 100%; }
+.filters .search-field { grid-column: 1 / -1; }
+.browse-count { font-weight: 600; color: var(--navy-2); margin: 4px 0 14px; }
+.browse-list { max-height: 62vh; overflow-y: auto; padding-right: 4px; }
+@media (min-width: 640px) { .browse-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } }
 
 /* Callouts */
 .callout { border-radius: 12px; padding: 16px 18px; margin: 22px 0; }

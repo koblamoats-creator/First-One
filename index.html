@@ -36,8 +36,63 @@
         <div class="fact"><strong>D3</strong> offers <em>no</em> athletic money — but elite D3s can be nearly free for low-income families through need-based aid.</div>
         <div class="fact"><strong>NAIA &amp; JUCO</strong> are under-used, affordable pathways that also give athletic aid.</div>
       </div>
-      <button class="btn primary" id="startBtn">Start — it's free &amp; private</button>
+      <div class="intro-actions">
+        <button class="btn primary" id="startBtn">Start — it's free &amp; private</button>
+        <button class="btn ghost" id="browseBtn">Browse all colleges</button>
+      </div>
       <p class="fineprint">Your answers stay in your browser. Nothing is uploaded or saved to a server.</p>
+    </section>
+
+    <!-- BROWSE ALL SCHOOLS -->
+    <section id="browse" class="card">
+      <h2>Browse all colleges</h2>
+      <p class="section-sub">Explore the full database. Filter by region, division, school type, and affordability. This is the same list the recommender draws from.</p>
+      <div class="filters">
+        <label>Region
+          <select id="fRegion">
+            <option value="">All regions</option>
+            <option value="NE">Northeast</option>
+            <option value="SE">Southeast</option>
+            <option value="MW">Midwest</option>
+            <option value="SW">Southwest</option>
+            <option value="W">West</option>
+          </select>
+        </label>
+        <label>Division
+          <select id="fDivision">
+            <option value="">All divisions</option>
+            <option value="D1">NCAA D1</option>
+            <option value="D2">NCAA D2</option>
+            <option value="D3">NCAA D3</option>
+            <option value="NAIA">NAIA</option>
+            <option value="JUCO">JUCO</option>
+          </select>
+        </label>
+        <label>Type
+          <select id="fType">
+            <option value="">All types</option>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+        </label>
+        <label>Aid
+          <select id="fAid">
+            <option value="">Any aid</option>
+            <option value="fullneed">Meets full need</option>
+            <option value="merit">Merit scholarships</option>
+            <option value="athletic">Athletic scholarships</option>
+          </select>
+        </label>
+        <label class="search-field">Search
+          <input type="text" id="fSearch" placeholder="School or state…" />
+        </label>
+      </div>
+      <p class="browse-count" id="browseCount"></p>
+      <ul class="school-list browse-list" id="browseList"></ul>
+      <div class="nav-row">
+        <button type="button" class="btn ghost" id="browseBackBtn">Back to start</button>
+        <button type="button" class="btn primary" id="browseStartBtn">Get my personalized plan</button>
+      </div>
     </section>
 
     <!-- WIZARD -->

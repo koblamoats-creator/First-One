@@ -261,17 +261,74 @@ function rankDivisions(tier, academics, finances, a) {
 }
 
 /*
+ * Income-aware affordability verdict for a single school. Returns { tone, text }
+ * where tone is 'good' | 'ok' | 'warn'. This makes the SAME school read
+ * differently depending on the family's income — the clearest signal that the
+ * tool is responding to money, not just admissions.
+ */
+function affordabilityVerdict(s, finances, inStatePublic) {
+  const athletic = DIVISION_FACTS[s.division].athleticScholarships;
+  const tier = finances.incomeTier;
+
+  if (tier === "low") {
+    if (s.meetsFullNeed) return { tone: "good", text: "Likely near-free — meets 100% of your need" };
+    if (inStatePublic) return { tone: "good", text: "Very affordable — in-state tuition + Pell + state grants" };
+    if (athletic && s.lowIncomeAffordability === "high") return { tone: "good", text: "Low cost if you earn athletic $ and stack Pell" };
+    if (s.lowIncomeAffordability === "high") return { tone: "ok", text: "Affordable with Pell + state grants" };
+    return { tone: "ok", text: "Moderate — combine any athletic $ with Pell; check the net price calculator" };
+  }
+
+  if (tier === "high") {
+    if (inStatePublic) return { tone: "good", text: "Best value: in-state public tuition" };
+    if (s.meritAid && athletic) return { tone: "good", text: "Discountable via merit and/or athletic scholarships" };
+    if (s.meritAid) return { tone: "ok", text: "Discounted via merit scholarships (need aid won't apply)" };
+    if (athletic) return { tone: "ok", text: "Value depends on the athletic scholarship offer" };
+    if (s.meetsFullNeed) return { tone: "warn", text: "Expect near full sticker — need aid won't help at your income" };
+    return { tone: "warn", text: "Likely full price — compare net price calculators carefully" };
+  }
+
+  // middle income
+  if (inStatePublic) return { tone: "good", text: "Strong value: in-state public tuition + some aid" };
+  if (s.meritAid) return { tone: "good", text: "Merit scholarships are your biggest lever here" };
+  if (s.meetsFullNeed) return { tone: "ok", text: "May meet part of your need — run the net price calculator" };
+  if (athletic) return { tone: "ok", text: "Partial athletic $ + some aid can add up" };
+  return { tone: "ok", text: "Mixed — check the net price calculator for your number" };
+}
+
+/*
  * Pick schools for the shortlist, bucketed Reach/Target/Safety.
- * The KEY idea: the family's income tier changes WHICH schools score well, not
- * just how the list is filtered — so changing income/grades visibly reshuffles
- * the results.
+ * The KEY idea: the family's income tier changes WHICH schools score well AND
+ * which are filtered out — so changing income visibly reshuffles the results.
  */
 function buildShortlist(rankedDivisions, tier, academics, finances, a) {
   const topDivisions = rankedDivisions.slice(0, 3).map((d) => d.key);
   const preferred = finances.preferredRegion;
 
+  const homeState = (a.homeState || "").toUpperCase();
+  const isInStatePublic = (s) => s.type === "public" && s.state === homeState;
+
   // Candidate pool: schools in the recommended divisions.
   let pool = SCHOOLS.filter((s) => topDivisions.includes(s.division));
+
+  // --- Income-tier POOL FILTER: changes WHICH schools are viable, not just order.
+  if (finances.incomeTier === "high") {
+    // For a high earner, a private that only gives NEED-based aid is basically
+    // full sticker price — a poor value. Drop those so merit/public/athletic
+    // options surface instead. (Keeps publics for in-state value, and any
+    // school with merit or athletic money.)
+    pool = pool.filter((s) => {
+      const athletic = DIVISION_FACTS[s.division].athleticScholarships;
+      const needOnlyPrivate = s.type === "private" && s.meetsFullNeed && !s.meritAid && !athletic;
+      return !needOnlyPrivate;
+    });
+  } else if (finances.incomeTier === "low") {
+    // Drop options a low-income family realistically can't cover (no need aid,
+    // no athletic money, and not rated affordable).
+    pool = pool.filter((s) => {
+      const athletic = DIVISION_FACTS[s.division].athleticScholarships;
+      return s.lowIncomeAffordability !== "low" || s.meetsFullNeed || athletic;
+    });
+  }
 
   // If they won't relocate, narrow to the region they want to attend in.
   // Fall back gracefully if that leaves too few to fill a useful list.
@@ -292,31 +349,33 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
     const facts = DIVISION_FACTS[s.division];
     let fit = 0;
     const reasons = [];
+    const inStatePublic = isInStatePublic(s);
 
     if (finances.incomeTier === "low") {
       if (s.lowIncomeAffordability === "high") { fit += 3; }
       else if (s.lowIncomeAffordability === "medium") { fit += 1; }
-      if (s.meetsFullNeed) { fit += 3; reasons.push("meets 100% of need"); }
-      if (facts.athleticScholarships) { fit += 1; reasons.push("athletic aid can stack with your need aid"); }
+      if (s.meetsFullNeed) { fit += 4; reasons.push("meets 100% of need — can be near-free for you"); }
+      if (facts.athleticScholarships) { fit += 1; reasons.push("athletic aid can stack with your Pell/state grants"); }
+      if (inStatePublic) { fit += 2; reasons.push("in-state public tuition"); }
     } else if (finances.incomeTier === "middle") {
       if (s.lowIncomeAffordability === "high") { fit += 2; }
       if (s.meritAid) { fit += 3; reasons.push("strong merit scholarships"); }
-      if (s.meetsFullNeed) { fit += 1; }
+      if (s.meetsFullNeed) { fit += 2; reasons.push("may still meet part of your need"); }
       if (facts.athleticScholarships) { fit += 1; }
-      if (s.type === "public" && s.region === preferred) { fit += 1; reasons.push("affordable public option"); }
+      if (inStatePublic) { fit += 3; reasons.push("in-state public tuition"); }
     } else {
-      // high income: need aid won't help much; reward merit + athletic value.
-      if (s.meritAid) { fit += 3; reasons.push("merit/academic scholarships"); }
-      if (facts.athleticScholarships) { fit += 2; reasons.push("athletic scholarship potential"); }
-      if (s.type === "public") { fit += 1; reasons.push("public-school value"); }
-      // full-need schools give a high earner little, so no bonus here.
+      // HIGH income: need aid won't help; reward merit, in-state public, athletic.
+      if (s.meritAid) { fit += 3; reasons.push("merit/academic scholarships (not income-based)"); }
+      if (inStatePublic) { fit += 4; reasons.push("in-state public tuition — your best value lever"); }
+      else if (s.type === "public") { fit += 1; }
+      if (facts.athleticScholarships) { fit += 2; reasons.push("athletic scholarship is your other discount lever"); }
+      // meetsFullNeed gives a high earner nothing → no bonus.
     }
 
-    // Region + in-state preferences (apply for everyone).
+    // Region preference (applies for everyone).
     if (preferred && s.region === preferred) fit += 2;
-    if (finances.inStatePreference && s.type === "public" && s.state === (a.homeState || "").toUpperCase()) {
-      fit += 3; reasons.push("in-state public tuition");
-    }
+    // Explicit in-state preference is an extra nudge on top of the value above.
+    if (finances.inStatePreference && inStatePublic) fit += 2;
 
     // Selectivity vs academic strength decides reach/target/safety.
     const sel = s.selectivity;
@@ -326,7 +385,8 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
     else if (sel === "moderate") bucket = good || strong ? "safety" : "target";
     else bucket = "safety"; // open admission
 
-    return { ...s, fit, fitReasons: reasons, bucket };
+    const verdict = affordabilityVerdict(s, finances, inStatePublic);
+    return { ...s, fit, fitReasons: reasons, bucket, verdict };
   });
 
   // Sort each bucket by fit (tie-break by name for stable, varied output).
