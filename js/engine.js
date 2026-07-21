@@ -273,11 +273,15 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
   // Candidate pool: schools in the recommended divisions.
   let pool = SCHOOLS.filter((s) => topDivisions.includes(s.division));
 
-  // If they won't relocate, keep the region they want to attend in.
+  // If they won't relocate, narrow to the region they want to attend in.
   // Fall back gracefully if that leaves too few to fill a useful list.
+  let singleRegion = false;
   if (!finances.willingToRelocate && preferred) {
     const regional = pool.filter((s) => s.region === preferred);
-    if (regional.length >= 6) pool = regional;
+    if (regional.length >= 6) {
+      pool = regional;
+      singleRegion = true;
+    }
   }
 
   const strong = academics.academicStrength === "strong";
@@ -331,11 +335,42 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
     .sort((x, y) => y.fit - x.fit || x.name.localeCompare(y.name))
     .forEach((s) => byBucket[s.bucket].push(s));
 
+  // In a nationwide search, spread picks across regions so the list doesn't
+  // clump in one part of the country. When the user locked to one region, keep
+  // the straight fit ordering.
+  const finalize = (list, n) =>
+    (singleRegion ? list : spreadByRegion(list)).slice(0, n);
+
   return {
-    reach: byBucket.reach.slice(0, 5),
-    target: byBucket.target.slice(0, 6),
-    safety: byBucket.safety.slice(0, 6),
+    reach: finalize(byBucket.reach, 5),
+    target: finalize(byBucket.target, 6),
+    safety: finalize(byBucket.safety, 6),
   };
+}
+
+/*
+ * Reorder a fit-sorted list so regions are interleaved (round-robin). Each
+ * region's internal fit order is preserved, so we still surface the best of
+ * each region first — just balanced across the country.
+ */
+function spreadByRegion(list) {
+  const groups = {};
+  list.forEach((s) => {
+    (groups[s.region] = groups[s.region] || []).push(s);
+  });
+  const regions = Object.keys(groups);
+  const out = [];
+  let pulled = true;
+  while (pulled) {
+    pulled = false;
+    for (const r of regions) {
+      if (groups[r].length) {
+        out.push(groups[r].shift());
+        pulled = true;
+      }
+    }
+  }
+  return out;
 }
 
 /* Personalized action checklist. */
