@@ -175,6 +175,14 @@ const SCHOOLS = [
   { name: "Salt Lake Community College", division: "JUCO", state: "UT", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "open", note: "Strong JUCO transfer record; Pell often covers most costs." },
 ];
 
+/* Recruiting base rates — the reality-check funnel (NCAA estimates; approximate) */
+const RECRUITING_FUNNEL = {
+  mens:
+    "Reality of the odds: of ~540,000 boys who play high-school basketball, only about 3.5% play in college at ANY level — and under 1% reach NCAA Division I. (NCAA estimates.)",
+  womens:
+    "Reality of the odds: of ~400,000 girls who play high-school basketball, only about 4% play in college at ANY level — and about 1% reach NCAA Division I. (NCAA estimates.)",
+};
+
 /* Federal aid quick facts shown in the results strategy box */
 const AID_FACTS = {
   pellMax: 7395, // approx annual max Pell Grant; verify current year

@@ -43,44 +43,63 @@ const STEPS = [
     ],
   },
   {
-    title: "The Game",
-    intro: "Be honest here — realistic input gives a realistic plan.",
+    title: "The Game — an honest evaluation",
+    intro:
+      "We won't ask you to rate how good your athlete is — every parent (rightly!) loves their kid, and it's easy to be off by a level. Instead we ask only for FACTS a college coach can verify. That's what makes the result realistic.",
     questions: [
       {
-        id: "playingLevel", label: "Current level of play", type: "radio",
+        id: "playingLevel", label: "Right now, what is your athlete's role on their school team?", type: "radio",
         options: [
-          ["varsityStar", "Varsity — a top player / star on the team"],
-          ["varsityStarter", "Varsity — regular starter"],
-          ["varsityBench", "Varsity — role/bench player"],
+          ["startVarsity", "Starts on varsity"],
+          ["rotationVarsity", "Plays regular minutes on varsity (rotation)"],
+          ["benchVarsity", "On varsity, but limited minutes"],
           ["jv", "JV / freshman team"],
-          ["rec", "Rec / just starting out"],
+          ["none", "Not on a school team yet"],
         ],
       },
       {
-        id: "clubLevel", label: "Club / AAU / travel-ball exposure", type: "radio",
+        id: "madeVarsity", label: "When did they FIRST make varsity? (recruiting timing matters)", type: "radio",
         options: [
-          ["nationalCircuit", "National circuit (Nike EYBL, Adidas, UAA, etc.)"],
+          ["fresh", "9th grade"],
+          ["soph", "10th grade"],
+          ["junior", "11th grade"],
+          ["senior", "12th grade"],
+          ["na", "Not on varsity yet"],
+        ],
+      },
+      {
+        id: "clubLevel", label: "Highest level of club / AAU / travel ball played", type: "radio",
+        options: [
+          ["nationalCircuit", "National circuit (Nike EYBL, Adidas 3SSB, UAA)"],
           ["regional", "Regional travel team"],
           ["local", "Local club only"],
           ["none", "No club / AAU"],
         ],
       },
       {
-        id: "competitiveness", label: "Honestly, how does your athlete stack up against peers?", type: "radio",
+        id: "accolades", label: "Highest OFFICIAL honor earned (not a personal opinion)", type: "radio",
         options: [
-          ["topInState", "Among the best in the state"],
-          ["topInRegion", "Among the best in the area/region"],
-          ["aboveAverage", "Above average for their level"],
-          ["average", "Average / still developing"],
+          ["stateOrNational", "All-state or a national/state recruiting ranking"],
+          ["allConfRegion", "All-conference or all-region selection"],
+          ["teamHonor", "Team captain / team MVP"],
+          ["none", "None yet"],
         ],
       },
       {
-        id: "coachInterest", label: "Any college recruiting interest so far?", type: "radio",
+        id: "offers", label: "Actual college recruiting activity so far (the biggest reality signal)", type: "radio",
         options: [
-          ["d1Interest", "Yes — including D1/D2 programs"],
-          ["someInterest", "Some — a few schools reaching out"],
+          ["writtenD1D2", "Written scholarship offer(s) from D1/D2 programs"],
+          ["verbalOrD3", "Verbal interest, D3/NAIA offers, or direct coach contact"],
           ["campInvites", "Camp / showcase invites only"],
-          ["none", "None yet"],
+          ["none", "No college coach has made contact yet"],
+        ],
+      },
+      {
+        id: "coachEval", label: "Has a NEUTRAL evaluator (a coach/trainer/recruiting service who is NOT the parent) told you a realistic level?", type: "radio",
+        options: [
+          ["d1d2", "Yes — they said D1/D2"],
+          ["d3naia", "Yes — they said D3 / NAIA / JUCO"],
+          ["noEval", "No neutral evaluation yet"],
         ],
       },
       {
@@ -335,6 +354,24 @@ function renderResults() {
     )
     .join("");
 
+  const rc = rec.realityCheck;
+  const validationBadge = {
+    strong: `<span class="valid strong">Strong outside validation</span>`,
+    some: `<span class="valid some">Some outside validation</span>`,
+    little: `<span class="valid little">Needs an outside evaluation</span>`,
+  }[rc.validation];
+  const cappedNote = rec.scoreCaps && rec.scoreCaps.length
+    ? `<span class="score-caption capped">↓ Held to a realistic ceiling for your athlete's grade</span>`
+    : "";
+
+  const realityBox = `
+    <div class="callout reality">
+      <h4>🔎 Reality check — is this level realistic?</h4>
+      <p class="funnel">${rc.funnel}</p>
+      <p class="validation-line">Based on OBJECTIVE facts you entered (not opinion): ${validationBadge}</p>
+      ${rc.messages.map((m) => `<p>${m}</p>`).join("")}
+    </div>`;
+
   const html = `
     <h2>Your Recruiting Game Plan</h2>
 
@@ -343,10 +380,13 @@ function renderResults() {
         <span class="tier-label">Estimated realistic level</span>
         <span class="tier-value">${rec.tier.label}</span>
         <div class="score-bar"><div style="width:${rec.athleticScore}%"></div></div>
-        <span class="score-caption">Athletic profile score: ${rec.athleticScore}/100 (based on your honest inputs)</span>
+        <span class="score-caption">Athletic profile score: ${rec.athleticScore}/100 — built only from verifiable facts, not self-rating</span>
+        ${cappedNote}
       </div>
       <p class="gender-note">${genderNote}</p>
     </div>
+
+    ${realityBox}
 
     <h3>Best pathways for your family, ranked</h3>
     <p class="section-sub">We weigh your athlete's level, grades, AND budget together — because the cheapest path to college ball isn't always the highest division.</p>

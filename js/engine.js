@@ -19,51 +19,90 @@ function athleticTier(score) {
   return { key: "developing", label: "Developing / JUCO-first pathway" };
 }
 
-/* Compute a 0-100 athletic score from the athletic answers. */
+/*
+ * Compute a 0-100 athletic score.
+ *
+ * ANTI-INFLATION DESIGN: parents naturally overrate their own kids, so we do
+ * NOT ask them to judge talent. Every input here is an OBJECTIVE, verifiable
+ * fact a coach would recognize — playing role, when they made varsity, AAU
+ * circuit level, official honors, and (weighted heaviest) actual recruiting
+ * activity and a neutral evaluator's read. Then reality caps keep the result
+ * honest for the athlete's grade.
+ */
 function computeAthleticScore(a) {
   let s = 0;
 
-  // Level currently playing (0-35)
+  // Current role on the team — a fact, not an opinion (0-22)
   s += ({
-    varsityStar: 35,
-    varsityStarter: 28,
-    varsityBench: 16,
-    jv: 8,
-    rec: 3,
+    startVarsity: 22,
+    rotationVarsity: 14,
+    benchVarsity: 8,
+    jv: 4,
+    none: 0,
   }[a.playingLevel] || 0);
 
-  // Club / AAU exposure level (0-25)
+  // When they FIRST made varsity — timing is a strong talent signal (0-10)
   s += ({
-    nationalCircuit: 25,
-    regional: 16,
-    local: 8,
+    fresh: 10,
+    soph: 8,
+    junior: 4,
+    senior: 2,
+    na: 0,
+  }[a.madeVarsity] || 0);
+
+  // Club / AAU circuit — verifiable exposure level (0-16)
+  s += ({
+    nationalCircuit: 16,
+    regional: 10,
+    local: 5,
     none: 0,
   }[a.clubLevel] || 0);
 
-  // Self/coach-rated competitiveness vs peers (0-20)
+  // Objective honors earned (0-14)
   s += ({
-    topInState: 20,
-    topInRegion: 14,
-    aboveAverage: 8,
-    average: 3,
-  }[a.competitiveness] || 0);
-
-  // Recruiting interest signals (0-12)
-  s += ({
-    d1Interest: 12,
-    someInterest: 7,
-    campInvites: 4,
+    stateOrNational: 14,
+    allConfRegion: 9,
+    teamHonor: 4,
     none: 0,
-  }[a.coachInterest] || 0);
+  }[a.accolades] || 0);
 
-  // Highlight film exists (0-8) — you can't get recruited without it
-  if (a.hasFilm === "yes") s += 8;
-  else if (a.hasFilm === "building") s += 3;
+  // Actual recruiting activity — the SINGLE most reliable reality signal (0-26)
+  s += ({
+    writtenD1D2: 26,
+    verbalOrD3: 16,
+    campInvites: 7,
+    none: 0,
+  }[a.offers] || 0);
 
-  // Earlier grade with strong profile = more runway (small bonus, capped)
-  if ((a.grade === "9" || a.grade === "10") && s > 40) s += 5;
+  // A NEUTRAL evaluator's division read — counters parent bias directly (0-12)
+  s += ({
+    d1d2: 12,
+    d3naia: 7,
+    noEval: 0,
+  }[a.coachEval] || 0);
 
-  return Math.max(0, Math.min(100, s));
+  // Younger athletes with a real foundation get runway credit (small, capped)
+  if ((a.grade === "9" || a.grade === "10") && s > 35) s += 6;
+
+  s = Math.max(0, Math.min(100, s));
+
+  // --- REALITY CAPS (the honesty guardrail) -------------------------------
+  // D1/D2 recruiting is largely done by the end of junior year. An 11th/12th
+  // grader with ZERO recruiting activity and no neutral D1/D2 read cannot
+  // realistically be scored "elite/D1", no matter how the other boxes look.
+  const olderClass = a.grade === "11" || a.grade === "12" || a.grade === "postgrad";
+  const noRecruiting = (a.offers === "none" || !a.offers);
+  const noHighEval = a.coachEval !== "d1d2";
+
+  const caps = [];
+  if (olderClass && noRecruiting && noHighEval) {
+    if (s > 61) { s = 61; caps.push("no-recruiting-junior-senior"); }
+  }
+  if (a.grade === "12" && noRecruiting && a.coachEval === "noEval") {
+    if (s > 45) { s = 45; caps.push("senior-no-signals"); }
+  }
+
+  return { score: s, caps };
 }
 
 /* Academic eligibility assessment. */
@@ -437,6 +476,17 @@ function spreadByRegion(list) {
 function buildChecklist(tier, academics, finances, a) {
   const items = [];
 
+  // If there's little OUTSIDE validation, the #1 priority is getting an honest,
+  // independent read — before spending time/money on a target list.
+  const weakSignals = (a.offers === "none" || !a.offers) && a.coachEval !== "d1d2";
+  if (weakSignals) {
+    items.push({
+      done: false,
+      text:
+        "GET AN INDEPENDENT EVALUATION FIRST. Sign up for a college ID camp, a ranked showcase (e.g. an NCSA/verified event), or ask a non-parent coach or trainer for an honest division read. This confirms your athlete's true level so the rest of this plan targets the right schools.",
+    });
+  }
+
   // Universal, ordered by urgency
   items.push({
     done: false,
@@ -480,19 +530,68 @@ function buildChecklist(tier, academics, finances, a) {
   return items;
 }
 
+/*
+ * Reality check — the honesty layer. Measures how much OUTSIDE validation the
+ * profile has (parent opinion is deliberately excluded from scoring), states
+ * the base-rate odds, and tells the family how to get a true read.
+ */
+function buildRealityCheck(a, scoreObj) {
+  const funnel = RECRUITING_FUNNEL[a.gender === "womens" ? "womens" : "mens"];
+  const messages = [];
+  const capped = scoreObj.caps.length > 0;
+
+  // Count OBJECTIVE, external signals (nothing here is parent judgment).
+  let ext = 0;
+  if (a.offers === "writtenD1D2") ext += 3;
+  else if (a.offers === "verbalOrD3") ext += 2;
+  else if (a.offers === "campInvites") ext += 1;
+  if (a.coachEval === "d1d2") ext += 2;
+  else if (a.coachEval === "d3naia") ext += 1;
+  if (a.accolades === "stateOrNational") ext += 2;
+  else if (a.accolades === "allConfRegion") ext += 1;
+  if (a.clubLevel === "nationalCircuit") ext += 1;
+
+  const validation = ext >= 4 ? "strong" : ext >= 2 ? "some" : "little";
+
+  if (capped) {
+    messages.push(
+      "We've held this estimate to a realistic ceiling for your athlete's grade. D1/D2 coaches do most of their recruiting by the end of junior year, and there's no college-coach activity on this profile yet — so a higher result wouldn't be honest. The encouraging part: JUCO, D3, and NAIA are wide open and regularly lead to moving up."
+    );
+  }
+
+  if (validation === "little") {
+    messages.push(
+      "This estimate rests mostly on in-program facts with little OUTSIDE evaluation yet — and coaches, not parents, decide recruiting. The fastest way to a true read is an independent evaluation: a college ID camp, a ranked showcase, or an honest sit-down with a non-parent coach or trainer. Treat the level above as a hopeful ceiling until an outsider confirms it."
+    );
+  } else if (validation === "some") {
+    messages.push(
+      "You have some outside validation. Keep stacking objective evidence — showcases, camps, neutral coach evaluations — to confirm the level before committing time and money to a target list."
+    );
+  } else {
+    messages.push(
+      "Strong outside validation is on this profile — real coach activity and honors. That makes the estimate more trustworthy than most. Keep the evidence current."
+    );
+  }
+
+  return { funnel, validation, capped, messages };
+}
+
 /* Top-level entry point. */
 function generateRecommendation(answers) {
-  const score = computeAthleticScore(answers);
-  const tier = athleticTier(score);
+  const scoreObj = computeAthleticScore(answers);
+  const tier = athleticTier(scoreObj.score);
   const academics = assessAcademics(answers);
   const finances = assessFinances(answers);
+  const realityCheck = buildRealityCheck(answers, scoreObj);
   const rankedDivisions = rankDivisions(tier, academics, finances, answers);
   const shortlist = buildShortlist(rankedDivisions, tier, academics, finances, answers);
   const checklist = buildChecklist(tier, academics, finances, answers);
 
   return {
-    athleticScore: score,
+    athleticScore: scoreObj.score,
+    scoreCaps: scoreObj.caps,
     tier,
+    realityCheck,
     academics,
     finances,
     rankedDivisions,

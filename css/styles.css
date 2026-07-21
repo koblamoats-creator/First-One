@@ -174,6 +174,16 @@ select:focus, input:focus { outline: none; border-color: var(--orange); }
 .callout.warn { background: var(--amber-bg); border: 1px solid #f2d9a8; }
 .callout.ok { background: var(--green-bg); border: 1px solid #bfe6cf; }
 .callout.money { background: var(--blue-bg); border: 1px solid #cadcf5; }
+.callout.reality { background: #fbf7ef; border: 1px solid #ead9be; }
+.callout.reality .funnel { font-weight: 600; color: var(--amber); margin: 0 0 10px; }
+.callout.reality p { margin: 0 0 10px; font-size: 14.5px; }
+.callout.reality p:last-child { margin-bottom: 0; }
+.validation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.valid { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+.valid.strong { background: var(--green-bg); color: var(--green); }
+.valid.some { background: var(--blue-bg); color: var(--navy-2); }
+.valid.little { background: #fdeceb; color: #c0392b; }
+.score-caption.capped { color: #ffd9b0; font-weight: 700; margin-top: 4px; }
 .strategy-key { font-weight: 600; margin-bottom: 0; }
 
 /* Checklist */
