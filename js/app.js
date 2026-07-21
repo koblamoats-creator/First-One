@@ -220,6 +220,39 @@ let currentStep = 0;
 const el = (id) => document.getElementById(id);
 
 /* ------------------------------------------------------------------ *
+ * Auto-save — persist progress so a phone lock / backgrounding never
+ * wipes the questionnaire. Everything stays in the browser (localStorage).
+ * ------------------------------------------------------------------ */
+const STORAGE_KEY = "recruitReady.progress.v1";
+
+function saveState() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ answers, currentStep, ts: Date.now() })
+    );
+  } catch (e) {
+    /* private mode / storage disabled — fail silently, app still works */
+  }
+}
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {}
+  for (const k in answers) delete answers[k];
+  currentStep = 0;
+}
+
+/* ------------------------------------------------------------------ *
  * View switching
  * ------------------------------------------------------------------ */
 function showView(id) {
@@ -272,6 +305,16 @@ function renderStep() {
   el("stepContainer").innerHTML = html;
   el("backBtn").style.visibility = currentStep === 0 ? "hidden" : "visible";
   el("nextBtn").textContent = currentStep === STEPS.length - 1 ? "See my results" : "Next";
+
+  // Auto-save on every answer so backgrounding/locking never loses progress.
+  el("stepContainer").addEventListener("input", () => {
+    saveStep();
+    saveState();
+  });
+  el("stepContainer").addEventListener("change", () => {
+    saveStep();
+    saveState();
+  });
 }
 
 /* Save current step's inputs into `answers`. */
@@ -451,6 +494,7 @@ el("startBtn").addEventListener("click", () => {
 
 el("nextBtn").addEventListener("click", () => {
   saveStep();
+  saveState();
   if (currentStep < STEPS.length - 1) {
     currentStep++;
     renderStep();
@@ -461,6 +505,7 @@ el("nextBtn").addEventListener("click", () => {
 
 el("backBtn").addEventListener("click", () => {
   saveStep();
+  saveState();
   if (currentStep > 0) {
     currentStep--;
     renderStep();
@@ -468,12 +513,49 @@ el("backBtn").addEventListener("click", () => {
 });
 
 el("restartBtn").addEventListener("click", () => {
-  for (const k in answers) delete answers[k];
-  currentStep = 0;
+  clearState();
+  el("resumeBanner").hidden = true;
   showView("intro");
 });
 
 el("printBtn").addEventListener("click", () => window.print());
+
+/* Resume / guide wiring */
+el("resumeBtn").addEventListener("click", () => {
+  const saved = loadState();
+  if (saved && saved.answers) {
+    Object.assign(answers, saved.answers);
+    currentStep = Math.min(saved.currentStep || 0, STEPS.length - 1);
+  }
+  el("resumeBanner").hidden = true;
+  renderStep();
+  showView("wizard");
+});
+
+el("freshBtn").addEventListener("click", () => {
+  clearState();
+  el("resumeBanner").hidden = true;
+});
+
+function openGuide() {
+  showView("guide");
+}
+el("guideBtn").addEventListener("click", openGuide);
+el("resultsGuideBtn").addEventListener("click", openGuide);
+el("guideBackBtn").addEventListener("click", () => showView("intro"));
+el("guideStartBtn").addEventListener("click", () => {
+  currentStep = 0;
+  renderStep();
+  showView("wizard");
+});
+
+/* On load: if a saved, unfinished questionnaire exists, offer to resume. */
+(function checkForSavedProgress() {
+  const saved = loadState();
+  if (saved && saved.answers && Object.keys(saved.answers).length > 0) {
+    el("resumeBanner").hidden = false;
+  }
+})();
 
 /* ------------------------------------------------------------------ *
  * Browse All Schools
