@@ -11,12 +11,64 @@
  * exactly why a recommendation was made.
  */
 
-/* Map a raw athletic score to a tier label. */
+/* Map a raw athletic score to a tier label.
+ * Labels center the realistic middle (D2/D3/NAIA/JUCO) — the audience this tool
+ * is built for — rather than treating D1 as the only "success." */
 function athleticTier(score) {
-  if (score >= 82) return { key: "elite", label: "Elite / D1-caliber" };
-  if (score >= 62) return { key: "high", label: "High / D2–NAIA-caliber" };
-  if (score >= 40) return { key: "solid", label: "Solid / D3–NAIA-caliber" };
-  return { key: "developing", label: "Developing / JUCO-first pathway" };
+  if (score >= 82) return { key: "elite", label: "High-major prospect (rare — verify with coach contact)" };
+  if (score >= 62) return { key: "high", label: "College-ready — target D2 / NAIA (with D1 upside to prove)" };
+  if (score >= 40) return { key: "solid", label: "Strong fit for D3 / NAIA / D2" };
+  return { key: "developing", label: "Best path: JUCO or prep school, then move up" };
+}
+
+/* Position group for size guidelines. */
+function positionGroup(pos) {
+  if (pos === "pg" || pos === "sg") return "guard";
+  if (pos === "sf") return "wing";
+  if (pos === "pf" || pos === "c") return "big";
+  return null;
+}
+
+/* Format inches as feet'inches". */
+function formatHeight(inches) {
+  const ft = Math.floor(inches / 12);
+  const inch = inches % 12;
+  return ft + "'" + inch + '"';
+}
+
+/*
+ * Position-relative size read. Returns the highest level where height is NOT a
+ * headwind, a d1Headwind flag, and an encouraging, honest note. Returns null if
+ * height/position weren't provided.
+ */
+function assessSize(a) {
+  const h = parseInt(a.height, 10);
+  const grp = positionGroup(a.position);
+  if (!h || !grp) return null;
+
+  const mins = SIZE_MIN[grp];
+  const grpLabel = { guard: "guard", wing: "wing", big: "post player" }[grp];
+  let ceiling, tone, note;
+
+  if (h >= mins.D1) {
+    ceiling = "D1";
+    tone = "plus";
+    note = `At ${formatHeight(h)}, size is an asset for a ${grpLabel} at every level. If the skill and recruiting activity are there, size won't hold you back.`;
+  } else if (h >= mins.D2) {
+    ceiling = "D2";
+    tone = "neutral";
+    note = `At ${formatHeight(h)}, size fits well at D2, D3, and NAIA for a ${grpLabel}. D1 is a tougher size match — possible with standout skill, but D2-and-below is the realistic target.`;
+  } else if (h >= mins.D3) {
+    ceiling = "D3";
+    tone = "neutral";
+    note = `At ${formatHeight(h)}, D3, NAIA, and JUCO are realistic size fits for a ${grpLabel}. To play up a level, elite skill, quickness, or shooting has to make up for size.`;
+  } else {
+    ceiling = "below";
+    tone = "headwind";
+    note = `At ${formatHeight(h)}, height is a real headwind for a ${grpLabel} — but undersized players DO earn spots with elite handle, speed, and shooting. Target D3, NAIA, and JUCO, lean into skill, and let film do the talking.`;
+  }
+
+  return { heightIn: h, group: grp, ceiling, tone, d1Headwind: h < mins.D1, note };
 }
 
 /*
@@ -208,7 +260,7 @@ function assessFinances(a) {
  * Rank the divisions/pathways for THIS family.
  * Returns an array of { key, score, reasons[] } sorted best-first.
  */
-function rankDivisions(tier, academics, finances, a) {
+function rankDivisions(tier, academics, finances, a, size) {
   const scores = {
     D1: { score: 0, reasons: [] },
     D2: { score: 0, reasons: [] },
@@ -231,6 +283,21 @@ function rankDivisions(tier, academics, finances, a) {
         tierWeights[k] >= 30 ? "realistic" : tierWeights[k] >= 15 ? "possible" : "unlikely"
       } target.`
     );
+  }
+
+  // --- Position-relative SIZE realism: height is a real gate at D1, far less so
+  // below it (where skill and speed matter more). Undersized players get pushed
+  // toward the levels where they genuinely thrive. ---
+  if (size && size.d1Headwind) {
+    scores.D1.score -= size.ceiling === "below" ? 16 : 10;
+    scores.D1.reasons.push(
+      `At ${formatHeight(size.heightIn)} for a ${size.group}, D1 size expectations are a headwind — the realistic target is D2 and below.`
+    );
+    scores.D2.score += size.ceiling === "below" ? 4 : 8;
+    scores.D3.score += 8;
+    scores.NAIA.score += 8;
+    scores.JUCO.score += size.ceiling === "below" ? 8 : 4;
+    scores.D3.reasons.push("Size fits comfortably at D3/NAIA — coaches here prize skill and basketball IQ over pure height.");
   }
 
   // --- Financial fit ---
@@ -535,10 +602,16 @@ function buildChecklist(tier, academics, finances, a) {
  * profile has (parent opinion is deliberately excluded from scoring), states
  * the base-rate odds, and tells the family how to get a true read.
  */
-function buildRealityCheck(a, scoreObj) {
+function buildRealityCheck(a, scoreObj, size) {
   const funnel = RECRUITING_FUNNEL[a.gender === "womens" ? "womens" : "mens"];
   const messages = [];
   const capped = scoreObj.caps.length > 0;
+
+  // The core framing of this whole tool: true D1 players already know.
+  // (The position-relative size note is shown separately in its own line.)
+  messages.push(
+    "Who this tool is for: if your athlete were a lock D1 recruit, college coaches would almost certainly already be calling — that's how D1 works. This tool is built for the far more common (and hopeful!) situation: a good player who ISN'T sure where they fit. Your best real opportunities are usually D2, D3, NAIA, and JUCO — and those are excellent places to play, get an education, and even move up from."
+  );
 
   // Count OBJECTIVE, external signals (nothing here is parent judgment).
   let ext = 0;
@@ -580,10 +653,11 @@ function buildRealityCheck(a, scoreObj) {
 function generateRecommendation(answers) {
   const scoreObj = computeAthleticScore(answers);
   const tier = athleticTier(scoreObj.score);
+  const size = assessSize(answers);
   const academics = assessAcademics(answers);
   const finances = assessFinances(answers);
-  const realityCheck = buildRealityCheck(answers, scoreObj);
-  const rankedDivisions = rankDivisions(tier, academics, finances, answers);
+  const realityCheck = buildRealityCheck(answers, scoreObj, size);
+  const rankedDivisions = rankDivisions(tier, academics, finances, answers, size);
   const shortlist = buildShortlist(rankedDivisions, tier, academics, finances, answers);
   const checklist = buildChecklist(tier, academics, finances, answers);
 
@@ -591,6 +665,7 @@ function generateRecommendation(answers) {
     athleticScore: scoreObj.score,
     scoreCaps: scoreObj.caps,
     tier,
+    size,
     realityCheck,
     academics,
     finances,

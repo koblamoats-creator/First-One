@@ -178,6 +178,10 @@ select:focus, input:focus { outline: none; border-color: var(--orange); }
 .callout.reality .funnel { font-weight: 600; color: var(--amber); margin: 0 0 10px; }
 .callout.reality p { margin: 0 0 10px; font-size: 14.5px; }
 .callout.reality p:last-child { margin-bottom: 0; }
+.size-read { font-weight: 600; padding: 8px 11px; border-radius: 8px; font-size: 14px !important; }
+.size-read.plus { background: var(--green-bg); color: var(--green); }
+.size-read.neutral { background: var(--blue-bg); color: var(--navy-2); }
+.size-read.headwind { background: var(--amber-bg); color: var(--amber); }
 .validation-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .valid { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
 .valid.strong { background: var(--green-bg); color: var(--green); }

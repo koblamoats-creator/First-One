@@ -7,6 +7,16 @@
  * Questionnaire definition — grouped into 5 steps.
  * type: 'radio' | 'select' | 'number'
  * ------------------------------------------------------------------ */
+
+/* Height dropdown options (4'8" to 7'0"), stored as inches. */
+const HEIGHT_OPTIONS = (() => {
+  const opts = [["", "Select…"]];
+  for (let i = 56; i <= 84; i++) {
+    opts.push([String(i), Math.floor(i / 12) + "'" + (i % 12) + '"']);
+  }
+  return opts;
+})();
+
 const STEPS = [
   {
     title: "The Player",
@@ -28,6 +38,10 @@ const STEPS = [
           ["", "Select…"], ["pg", "Point guard"], ["sg", "Shooting guard"],
           ["sf", "Small forward"], ["pf", "Power forward"], ["c", "Center"],
         ],
+      },
+      {
+        id: "height", label: "Height (recruiting is about size FOR your position)", type: "select",
+        options: HEIGHT_OPTIONS,
       },
       {
         id: "region", label: "Which region do you most want to attend college in?", type: "select",
@@ -364,10 +378,15 @@ function renderResults() {
     ? `<span class="score-caption capped">↓ Held to a realistic ceiling for your athlete's grade</span>`
     : "";
 
+  const sizeLine = rec.size
+    ? `<p class="size-read ${rec.size.tone}">📏 Size read: ${rec.size.note}</p>`
+    : "";
+
   const realityBox = `
     <div class="callout reality">
       <h4>🔎 Reality check — is this level realistic?</h4>
       <p class="funnel">${rc.funnel}</p>
+      ${sizeLine}
       <p class="validation-line">Based on OBJECTIVE facts you entered (not opinion): ${validationBadge}</p>
       ${rc.messages.map((m) => `<p>${m}</p>`).join("")}
     </div>`;

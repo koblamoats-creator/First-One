@@ -175,6 +175,19 @@ const SCHOOLS = [
   { name: "Salt Lake Community College", division: "JUCO", state: "UT", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "open", note: "Strong JUCO transfer record; Pell often covers most costs." },
 ];
 
+/*
+ * Position-relative size guidelines (approximate typical heights, in inches,
+ * where height is NOT a headwind at that level). Recruiting is about size FOR
+ * YOUR POSITION — a 5'10" guard is normal; a 5'10" center is not. These are
+ * rough guides for realistic framing, never hard rules (skilled undersized
+ * players absolutely play in college — they just target the right levels).
+ */
+const SIZE_MIN = {
+  guard: { D1: 74, D2: 71, D3: 68 }, // 6'2" / 5'11" / 5'8"
+  wing: { D1: 78, D2: 75, D3: 72 }, //  6'6" / 6'3" / 6'0"
+  big: { D1: 80, D2: 78, D3: 75 }, //   6'8" / 6'6" / 6'3"
+};
+
 /* Recruiting base rates — the reality-check funnel (NCAA estimates; approximate) */
 const RECRUITING_FUNNEL = {
   mens:
