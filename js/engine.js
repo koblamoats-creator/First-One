@@ -416,28 +416,9 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
   // Candidate pool: schools in the recommended divisions.
   let pool = SCHOOLS.filter((s) => topDivisions.includes(s.division));
 
-  // --- Income-tier POOL FILTER: changes WHICH schools are viable, not just order.
-  if (finances.incomeTier === "high") {
-    // For a high earner, a private that only gives NEED-based aid is basically
-    // full sticker price — a poor value. Drop those so merit/public/athletic
-    // options surface instead. (Keeps publics for in-state value, and any
-    // school with merit or athletic money.)
-    pool = pool.filter((s) => {
-      const athletic = DIVISION_FACTS[s.division].athleticScholarships;
-      const needOnlyPrivate = s.type === "private" && s.meetsFullNeed && !s.meritAid && !athletic;
-      return !needOnlyPrivate;
-    });
-  } else if (finances.incomeTier === "low") {
-    // Drop options a low-income family realistically can't cover (no need aid,
-    // no athletic money, and not rated affordable).
-    pool = pool.filter((s) => {
-      const athletic = DIVISION_FACTS[s.division].athleticScholarships;
-      return s.lowIncomeAffordability !== "low" || s.meetsFullNeed || athletic;
-    });
-  }
-
-  // If they won't relocate, narrow to the region they want to attend in.
-  // Fall back gracefully if that leaves too few to fill a useful list.
+  // --- STEP 1: Region is a HARD constraint. A family that won't relocate must
+  // never be shown schools in another region. Apply this BEFORE income filtering
+  // so income filtering can never leak in out-of-region schools. ---
   let singleRegion = false;
   if (!finances.willingToRelocate && preferred) {
     const regional = pool.filter((s) => s.region === preferred);
@@ -446,6 +427,30 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
       singleRegion = true;
     }
   }
+
+  // --- STEP 2: Income-tier POOL FILTER. This is what makes the SCHOOL LIST (not
+  // just the money note) genuinely change with income. If it would leave too few
+  // schools to build a useful list, we RELAX it (keep the region intact and let
+  // fit ordering + affordability verdicts do the work) rather than break region. ---
+  const incomeKeeps = (s) => {
+    const athletic = DIVISION_FACTS[s.division].athleticScholarships;
+    if (finances.incomeTier === "high") {
+      // Need-only privates are full sticker for a high earner → drop.
+      const needOnlyPrivate = s.type === "private" && s.meetsFullNeed && !s.meritAid && !athletic;
+      return !needOnlyPrivate;
+    }
+    if (finances.incomeTier === "low") {
+      // Target genuinely affordable schools: meets-full-need or highly affordable.
+      return s.meetsFullNeed || s.lowIncomeAffordability === "high";
+    }
+    // middle: drop the very-expensive need-only privates.
+    const needOnlyPrivate =
+      s.type === "private" && s.meetsFullNeed && !s.meritAid && !athletic &&
+      s.lowIncomeAffordability !== "high";
+    return !needOnlyPrivate;
+  };
+  const incomeFiltered = pool.filter(incomeKeeps);
+  if (incomeFiltered.length >= 5) pool = incomeFiltered; // else relax, keep region
 
   const strong = academics.academicStrength === "strong";
   const good = academics.academicStrength === "good";
@@ -471,10 +476,12 @@ function buildShortlist(rankedDivisions, tier, academics, finances, a) {
       if (inStatePublic) { fit += 3; reasons.push("in-state public tuition"); }
     } else {
       // HIGH income: need aid won't help; reward merit, in-state public, athletic.
-      if (s.meritAid) { fit += 3; reasons.push("merit/academic scholarships (not income-based)"); }
+      if (s.meritAid) { fit += 4; reasons.push("merit/academic scholarships (not income-based)"); }
       if (inStatePublic) { fit += 4; reasons.push("in-state public tuition — your best value lever"); }
       else if (s.type === "public") { fit += 1; }
       if (facts.athleticScholarships) { fit += 2; reasons.push("athletic scholarship is your other discount lever"); }
+      // A higher-income family rarely starts at a two-year college by choice.
+      if (s.division === "JUCO") { fit -= 4; }
       // meetsFullNeed gives a high earner nothing → no bonus.
     }
 

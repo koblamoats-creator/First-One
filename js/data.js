@@ -173,6 +173,61 @@ const SCHOOLS = [
   { name: "Arizona Christian University", division: "NAIA", state: "AZ", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "NAIA; athletic + academic aid stack." },
   { name: "College of Southern Idaho", division: "JUCO", state: "ID", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "open", note: "Elite JUCO; strong D1 transfer pipeline; low cost." },
   { name: "Salt Lake Community College", division: "JUCO", state: "UT", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "open", note: "Strong JUCO transfer record; Pell often covers most costs." },
+
+  /* ========= EXPANSION: more depth + varied aid profiles per region ========= */
+  /* Merit-only privates (best for higher income), meets-full-need (best for low
+     income), and affordable publics (good for all) — so income changes the list. */
+
+  // --- Northeast ---
+  { name: "Ithaca College", division: "D3", state: "NY", region: "NE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "Merit scholarships; strong D3 athletics." },
+  { name: "Stevens Institute of Technology", division: "D3", state: "NJ", region: "NE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "Merit aid; strong career outcomes." },
+  { name: "Springfield College", division: "D3", state: "MA", region: "NE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Birthplace of basketball; merit aid." },
+  { name: "Endicott College", division: "D2", state: "MA", region: "NE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Coastal MA D2; merit + athletic aid." },
+  { name: "Adelphi University", division: "D2", state: "NY", region: "NE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Long Island D2; generous merit." },
+  { name: "Williams College", division: "D3", state: "MA", region: "NE", type: "private", lowIncomeAffordability: "high", meetsFullNeed: true, meritAid: false, selectivity: "highly-selective", note: "Meets full need, no loans; elite NESCAC hoops." },
+  { name: "SUNY Cortland", division: "D3", state: "NY", region: "NE", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "moderate", note: "Affordable public D3; strong athletics tradition." },
+  { name: "Stony Brook University (SUNY)", division: "D1", state: "NY", region: "NE", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "Low SUNY tuition; NY TAP + Excelsior for low income." },
+
+  // --- Southeast ---
+  { name: "Catawba College", division: "D2", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "SAC; strong merit aid." },
+  { name: "Lenoir-Rhyne University", division: "D2", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "SAC; merit + athletic aid." },
+  { name: "Wingate University", division: "D2", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "SAC; merit scholarships." },
+  { name: "Guilford College", division: "D3", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "NC D3; merit scholarships." },
+  { name: "Methodist University", division: "D3", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "NC D3; merit aid." },
+  { name: "University of Richmond", division: "D1", state: "VA", region: "SE", type: "private", lowIncomeAffordability: "high", meetsFullNeed: true, meritAid: true, selectivity: "highly-selective", note: "Richmond's Promise: meets full need + merit." },
+  { name: "NC State University", division: "D1", state: "NC", region: "SE", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "In-state value; Pack Promise for low income." },
+  { name: "Georgia State University", division: "D1", state: "GA", region: "SE", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Affordable Atlanta public D1." },
+  { name: "Barton College", division: "D2", state: "NC", region: "SE", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "Conference Carolinas D2; merit + athletic aid." },
+
+  // --- Midwest ---
+  { name: "Hope College", division: "D3", state: "MI", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "Strong D3; merit aid." },
+  { name: "Wheaton College (IL)", division: "D3", state: "IL", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "IL D3; merit scholarships." },
+  { name: "Illinois Wesleyan University", division: "D3", state: "IL", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "Merit aid; competitive D3." },
+  { name: "Grinnell College", division: "D3", state: "IA", region: "MW", type: "private", lowIncomeAffordability: "high", meetsFullNeed: true, meritAid: true, selectivity: "highly-selective", note: "Huge endowment; meets full need + merit." },
+  { name: "Drake University", division: "D1", state: "IA", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "MVC; strong merit aid." },
+  { name: "Valparaiso University", division: "D1", state: "IN", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "MVC; merit scholarships." },
+  { name: "Lewis University", division: "D2", state: "IL", region: "MW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "GLVC D2; merit + athletic aid." },
+  { name: "Missouri Western State University", division: "D2", state: "MO", region: "MW", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "Affordable public D2." },
+
+  // --- Southwest ---
+  { name: "Hardin-Simmons University", division: "D3", state: "TX", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "TX D3; merit aid." },
+  { name: "University of Mary Hardin-Baylor", division: "D3", state: "TX", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "TX D3; merit scholarships." },
+  { name: "Abilene Christian University", division: "D1", state: "TX", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "WAC; merit aid." },
+  { name: "St. Edward's University", division: "D2", state: "TX", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Austin D2; merit aid." },
+  { name: "St. Mary's University", division: "D2", state: "TX", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "San Antonio D2; merit aid." },
+  { name: "Texas State University", division: "D1", state: "TX", region: "SW", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Affordable public D1 (Sun Belt)." },
+  { name: "UT Arlington", division: "D1", state: "TX", region: "SW", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "Affordable Metroplex public D1." },
+  { name: "Southern Nazarene University", division: "D2", state: "OK", region: "SW", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "open", note: "OK D2; athletic + merit aid." },
+
+  // --- West ---
+  { name: "Chapman University", division: "D3", state: "CA", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "selective", note: "SoCal D3; merit scholarships." },
+  { name: "California Lutheran University", division: "D3", state: "CA", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "SoCal D3; merit aid." },
+  { name: "Whittier College", division: "D3", state: "CA", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "SCIAC D3; merit aid." },
+  { name: "Seattle Pacific University", division: "D2", state: "WA", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "GNAC D2; merit + athletic aid." },
+  { name: "Azusa Pacific University", division: "D2", state: "CA", region: "W", type: "private", lowIncomeAffordability: "medium", meetsFullNeed: false, meritAid: true, selectivity: "moderate", note: "PacWest D2; merit aid." },
+  { name: "Santa Clara University", division: "D1", state: "CA", region: "W", type: "private", lowIncomeAffordability: "high", meetsFullNeed: true, meritAid: true, selectivity: "selective", note: "WCC; meets full need + merit." },
+  { name: "Cal State Fullerton", division: "D1", state: "CA", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "moderate", note: "Affordable CSU D1; Cal Grant + Pell." },
+  { name: "Sonoma State University", division: "D2", state: "CA", region: "W", type: "public", lowIncomeAffordability: "high", meetsFullNeed: false, meritAid: false, selectivity: "moderate", note: "Affordable CSU D2." },
 ];
 
 /*
