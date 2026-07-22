@@ -12,12 +12,13 @@
  */
 
 /* Map a raw athletic score to a tier label.
- * Labels center the realistic middle (D2/D3/NAIA/JUCO) — the audience this tool
- * is built for — rather than treating D1 as the only "success." */
+ * This tool is built for athletes who are NOT elite D1 recruits, so the labels
+ * top out at "strong D2 / NAIA" — D1 is only ever surfaced separately, and only
+ * when the athlete already has real D1 offers. */
 function athleticTier(score) {
-  if (score >= 82) return { key: "elite", label: "High-major prospect (rare — verify with coach contact)" };
-  if (score >= 62) return { key: "high", label: "College-ready — target D2 / NAIA (with D1 upside to prove)" };
-  if (score >= 40) return { key: "solid", label: "Strong fit for D3 / NAIA / D2" };
+  if (score >= 78) return { key: "elite", label: "Top of this tool's range — strong D2 / NAIA fit" };
+  if (score >= 58) return { key: "high", label: "College-ready — great fit for D2, NAIA & strong D3" };
+  if (score >= 38) return { key: "solid", label: "Solid fit for D3, NAIA & JUCO" };
   return { key: "developing", label: "Best path: JUCO or prep school, then move up" };
 }
 
@@ -270,10 +271,12 @@ function rankDivisions(tier, academics, finances, a, size) {
   };
 
   // --- Athletic realism drives the base score ---
+  // This tool serves NON-elite athletes, so D1 starts at ZERO for everyone. It
+  // is only added back below if the athlete already has genuine D1 activity.
   const tierWeights = {
-    elite: { D1: 40, D2: 30, NAIA: 22, D3: 20, JUCO: 12 },
-    high: { D1: 14, D2: 40, NAIA: 34, D3: 30, JUCO: 20 },
-    solid: { D1: 4, D2: 22, NAIA: 30, D3: 38, JUCO: 26 },
+    elite: { D1: 0, D2: 40, NAIA: 32, D3: 26, JUCO: 14 },
+    high: { D1: 0, D2: 40, NAIA: 34, D3: 30, JUCO: 20 },
+    solid: { D1: 0, D2: 22, NAIA: 30, D3: 38, JUCO: 26 },
     developing: { D1: 0, D2: 8, NAIA: 16, D3: 20, JUCO: 40 },
   }[tier.key];
   for (const k in tierWeights) {
@@ -282,6 +285,20 @@ function rankDivisions(tier, academics, finances, a, size) {
       `Athletic tier (${tier.label}) makes ${k} a ${
         tierWeights[k] >= 30 ? "realistic" : tierWeights[k] >= 15 ? "possible" : "unlikely"
       } target.`
+    );
+  }
+
+  // --- D1 is NOT a target for this tool's audience unless the athlete ALREADY
+  // has real D1 activity (a written D1/D2 offer or a neutral D1/D2 evaluation).
+  // Only then do we acknowledge it as a pathway. ---
+  if (a.offers === "writtenD1D2" || a.coachEval === "d1d2") {
+    scores.D1.score += 40;
+    scores.D1.reasons.push(
+      "You already have D1-level interest — pursue those specific D1 programs directly (this is rare, and it's a good sign)."
+    );
+  } else {
+    scores.D1.reasons.push(
+      "D1 isn't a recruiting target here: D1 coaches recruit early and directly, so without an existing D1 offer your realistic, higher-opportunity paths are D2, NAIA, D3, and JUCO."
     );
   }
 

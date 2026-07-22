@@ -391,9 +391,7 @@ function renderResults() {
   const rec = generateRecommendation(answers);
 
   const genderNote =
-    answers.gender === "womens"
-      ? "Women's basketball D1 offers 15 full 'headcount' scholarships per team — slightly more full-ride opportunity than the men's side."
-      : "Men's basketball D1 offers 13 full 'headcount' scholarships per team — full rides exist but roster spots are very limited.";
+    "Reminder: the vast majority of college rosters are D2, D3, NAIA, and JUCO — that's where the real, reachable opportunities are for players who aren't fielding D1 offers. Athletic money exists at D2, NAIA, and JUCO; D3 uses need- and merit-based aid. A great fit at one of these beats chasing a D1 spot that isn't coming.";
 
   const financeNotes = rec.finances.notes.map((n) => `<li>${n}</li>`).join("");
   const academicFlags = rec.academics.flags.length
